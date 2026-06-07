@@ -1,0 +1,8 @@
+{
+  "contextMenuEnabled": true,
+  "projectTimerEnabled": true,
+  "defaultScale": {
+    "rootNote": 0,
+    "scaleType": "Major"
+  }
+}

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Helping Hands — Scale Helper</title>
+<style>
+  :root {
+    --p-live-ui-bg: hsl(0, 0%, 21%);
+    --p-live-control-bg: hsl(0, 0%, 16%);
+    --p-live-input-bg: hsl(0, 0%, 12%);
+    --p-live-text-primary: hsl(0, 0%, 71%);
+    --p-live-control-border: hsl(0, 0%, 7%);
+    --p-live-text-secondary: hsl(0, 0%, 41%);
+    --p-live-accent-primary: hsl(31, 100%, 67%);
+    --p-live-control-text--enabled: hsl(0, 0%, 7%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background-color: var(--p-live-ui-bg);
+    color: var(--p-live-text-primary);
+    font-family: "AbletonSansSmall", sans-serif;
+    font-size: 11.5px; font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding: 1em; display: flex; flex-direction: column; gap: 0.7em; height: 100vh; }
+  h2 { margin: 0; font-weight: 600; }
+  .alx-muted { color: var(--p-live-text-secondary); }
+  .alx-row { display: flex; align-items: center; gap: 0.6em; }
+  .alx-select {
+    background: var(--p-live-input-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border); height: 24px; padding: 0 0.5em;
+    border-radius: 0.25em; font: inherit;
+  }
+  .current-scale {
+    background: var(--p-live-control-bg); border: 1px solid var(--p-live-control-border);
+    border-radius: 0.4em; padding: 0.5em 0.7em;
+  }
+  .piano { position: relative; height: 120px; user-select: none; }
+  .key {
+    position: absolute; top: 0; height: 100%;
+    border: 1px solid var(--p-live-control-border);
+    border-radius: 0 0 0.25em 0.25em;
+    display: flex; align-items: flex-end; justify-content: center;
+    font-size: 0.85em; padding-bottom: 0.4em;
+    box-sizing: border-box;
+  }
+  .key.white { background: #d8d8d8; color: #333; z-index: 1; }
+  .key.black { background: #1a1a1a; color: #aaa; height: 62%; z-index: 2; }
+  .key.in-scale.white { background: var(--p-live-accent-primary); color: var(--p-live-control-text--enabled); font-weight: 600; }
+  .key.in-scale.black { background: hsl(31, 90%, 40%); color: #fff; font-weight: 600; }
+  .key.is-root { outline: 2px solid #fff; outline-offset: -2px; }
+  .alx-button {
+    background-color: var(--p-live-control-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border);
+    height: 22px; padding: 0 1.1em; border-radius: 1em;
+    cursor: pointer; font: inherit;
+  }
+  .alx-button:hover { border-color: var(--p-live-accent-primary); }
+  .alx-button--primary {
+    color: var(--p-live-control-text--enabled); background-color: var(--p-live-accent-primary);
+    border-color: var(--p-live-accent-primary);
+  }
+</style>
+</head>
+<body>
+  <h2>✋ Set Scale — <span id="clipName"></span></h2>
+
+  <div class="current-scale">
+    <span class="alx-muted">Live's current scale:</span>
+    <span id="liveScale"></span>
+  </div>
+
+  <div class="alx-row">
+    <label class="alx-muted">Root note</label>
+    <select id="rootNote" class="alx-select"></select>
+    <label class="alx-muted">Scale</label>
+    <select id="scaleType" class="alx-select"></select>
+  </div>
+
+  <div class="piano" id="piano"></div>
+
+  <p class="alx-muted" id="instructions"></p>
+
+  <div class="alx-row" style="justify-content: flex-end;">
+    <button class="alx-button" id="cancel">Cancel</button>
+    <button class="alx-button alx-button--primary" id="remember">Remember This Choice</button>
+  </div>
+
+<script>
+  function sendToLive(message) {
+    if (window.webkit?.messageHandlers?.live) {
+      window.webkit.messageHandlers.live.postMessage(message);
+    } else if (window.chrome?.webview) {
+      window.chrome.webview.postMessage(message);
+    }
+  }
+  function closeWithResult(result) {
+    sendToLive({ method: "close_and_send", params: [JSON.stringify(result)] });
+  }
+
+  const DATA = /*__HELPING_HANDS_SCALE_DATA__*/null;
+
+  const rootSelect = document.getElementById("rootNote");
+  const scaleSelect = document.getElementById("scaleType");
+  const pianoEl = document.getElementById("piano");
+  const instructionsEl = document.getElementById("instructions");
+
+  document.getElementById("clipName").textContent = DATA ? DATA.clipName : "";
+
+  if (DATA) {
+    document.getElementById("liveScale").textContent =
+      DATA.noteNames[((DATA.liveRootNote % 12) + 12) % 12] + " " + DATA.liveScaleName +
+      (DATA.liveScaleMode ? " (Scale Mode on)" : " (Scale Mode off)");
+
+    DATA.noteNames.forEach((name, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = name;
+      if (i === DATA.selectedRootNote) opt.selected = true;
+      rootSelect.appendChild(opt);
+    });
+
+    DATA.scales.forEach((s) => {
+      const opt = document.createElement("option");
+      opt.value = s.label;
+      opt.textContent = s.label;
+      if (s.label === DATA.selectedScaleType) opt.selected = true;
+      scaleSelect.appendChild(opt);
+    });
+  }
+
+  // Two-octave keyboard layout starting at C.
+  const WHITE_OFFSETS = [0, 2, 4, 5, 7, 9, 11];
+  const BLACK_OFFSETS = [1, 3, null, 6, 8, 10, null];
+  const OCTAVES = 2;
+  const WHITE_KEY_WIDTH = 13; // percent
+
+  function currentScale() {
+    const label = scaleSelect.value;
+    const found = (DATA?.scales || []).find((s) => s.label === label);
+    return found ? found.intervals : [];
+  }
+
+  function inScale(noteOffsetFromC) {
+    const root = parseInt(rootSelect.value, 10);
+    const intervals = currentScale();
+    const relative = ((noteOffsetFromC - root) % 12 + 12) % 12;
+    return intervals.includes(relative);
+  }
+
+  function isRoot(noteOffsetFromC) {
+    const root = parseInt(rootSelect.value, 10);
+    return ((noteOffsetFromC % 12) + 12) % 12 === root;
+  }
+
+  function renderPiano() {
+    pianoEl.innerHTML = "";
+    let whiteIndex = 0;
+
+    for (let octave = 0; octave < OCTAVES; octave++) {
+      WHITE_OFFSETS.forEach((semitone) => {
+        const note = octave * 12 + semitone;
+        const key = document.createElement("div");
+        key.className = "key white" + (inScale(note) ? " in-scale" : "") + (isRoot(note) ? " is-root" : "");
+        key.style.left = (whiteIndex * WHITE_KEY_WIDTH) + "%";
+        key.style.width = WHITE_KEY_WIDTH + "%";
+        key.textContent = DATA.noteNames[semitone];
+        pianoEl.appendChild(key);
+        whiteIndex++;
+      });
+    }
+
+    whiteIndex = 0;
+    for (let octave = 0; octave < OCTAVES; octave++) {
+      BLACK_OFFSETS.forEach((semitone, i) => {
+        if (semitone !== null) {
+          const note = octave * 12 + semitone;
+          const key = document.createElement("div");
+          key.className = "key black" + (inScale(note) ? " in-scale" : "") + (isRoot(note) ? " is-root" : "");
+          key.style.left = ((whiteIndex + i + 1) * WHITE_KEY_WIDTH - WHITE_KEY_WIDTH * 0.3) + "%";
+          key.style.width = (WHITE_KEY_WIDTH * 0.6) + "%";
+          pianoEl.appendChild(key);
+        }
+      });
+      whiteIndex += 7;
+    }
+  }
+
+  function renderInstructions() {
+    if (!DATA) return;
+    const rootName = DATA.noteNames[parseInt(rootSelect.value, 10)];
+    const scaleType = scaleSelect.value;
+    instructionsEl.textContent =
+      "Helping Hands can't change Live's scale directly (the SDK exposes it read-only). " +
+      "To match this preview, open Live's Scale chooser and set Root = " + rootName +
+      ", Scale = " + scaleType + ". Your choice will be remembered as the default for next time.";
+  }
+
+  function rerender() {
+    renderPiano();
+    renderInstructions();
+  }
+
+  rootSelect.addEventListener("change", rerender);
+  scaleSelect.addEventListener("change", rerender);
+  rerender();
+
+  document.getElementById("cancel").addEventListener("click", () =>
+    closeWithResult({ rootNote: 0, scaleType: "", confirmed: false }));
+  document.getElementById("remember").addEventListener("click", () =>
+    closeWithResult({
+      rootNote: parseInt(rootSelect.value, 10),
+      scaleType: scaleSelect.value,
+      confirmed: true,
+    }));
+</script>
+</body>
+</html>

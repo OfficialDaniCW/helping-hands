@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Helping Hands</title>
+<style>
+  :root {
+    --p-live-ui-bg: hsl(0, 0%, 21%);
+    --p-live-control-bg: hsl(0, 0%, 16%);
+    --p-live-input-bg: hsl(0, 0%, 12%);
+    --p-live-text-primary: hsl(0, 0%, 71%);
+    --p-live-control-border: hsl(0, 0%, 7%);
+    --p-live-text-secondary: hsl(0, 0%, 41%);
+    --p-live-accent-primary: hsl(31, 100%, 67%);
+    --p-live-control-text--enabled: hsl(0, 0%, 7%);
+    --hh-green: hsl(140, 55%, 48%);
+    --hh-blue: hsl(205, 75%, 58%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background-color: var(--p-live-ui-bg);
+    color: var(--p-live-text-primary);
+    font-family: "AbletonSansSmall", sans-serif;
+    font-size: 11.5px; font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { display: flex; flex-direction: column; height: 100vh; }
+  header {
+    display: flex; align-items: center; gap: 0.6em;
+    padding: 0.7em 1em; border-bottom: 1px solid var(--p-live-control-border);
+  }
+  header h1 { font-size: 1.15em; margin: 0; font-weight: 600; }
+  .alx-spacer { flex: 1; }
+  .alx-muted { color: var(--p-live-text-secondary); }
+  .toolbar { display: flex; gap: 0.5em; padding: 0.6em 1em; border-bottom: 1px solid var(--p-live-control-border); }
+  .alx-input {
+    background: var(--p-live-input-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border); height: 24px; padding: 0 0.6em;
+    border-radius: 0.25em; font: inherit; flex: 1;
+  }
+  .alx-button {
+    background-color: var(--p-live-control-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border);
+    height: 22px; padding: 0 1em; border-radius: 1em; cursor: pointer; font: inherit; white-space: nowrap;
+  }
+  .alx-button:hover { border-color: var(--p-live-accent-primary); }
+  .alx-button--primary {
+    color: var(--p-live-control-text--enabled); background-color: var(--p-live-accent-primary);
+    border-color: var(--p-live-accent-primary);
+  }
+  .alx-button--insert { background: var(--hh-green); border-color: var(--hh-green); color: #08210f; }
+  .alx-button--search { background: var(--hh-blue); border-color: var(--hh-blue); color: #081c2e; }
+  .alx-button--chain { background: hsl(265, 50%, 60%); border-color: hsl(265, 50%, 60%); color: #1c1430; }
+  .alx-button--group { background: hsl(35, 70%, 55%); border-color: hsl(35, 70%, 55%); color: #2c1d04; }
+  .alx-button:disabled { opacity: 0.4; cursor: default; }
+
+  main { flex: 1; overflow-y: auto; padding: 0.6em 1em; }
+  .category {
+    margin-bottom: 0.3em;
+  }
+  .category > .category-header {
+    display: flex; align-items: center; gap: 0.4em;
+    cursor: pointer; padding: 0.35em 0.4em;
+    border-radius: 0.25em;
+    user-select: none;
+  }
+  .category > .category-header:hover { background: var(--p-live-control-bg); }
+  .category > .category-header .chevron { transition: transform 0.1s ease; color: var(--p-live-text-secondary); width: 1em; }
+  .category.collapsed > .category-header .chevron { transform: rotate(-90deg); }
+  .category > .category-body { padding-left: 1.4em; }
+  .category.collapsed > .category-body { display: none; }
+
+  .menu-item, .menu-chain, .menu-group {
+    display: flex; align-items: center; gap: 0.6em;
+    padding: 0.3em 0.4em; border-radius: 0.25em;
+  }
+  .menu-item:hover, .menu-chain:hover, .menu-group:hover { background: var(--p-live-control-bg); }
+  .menu-item .label, .menu-chain .label, .menu-group .label { flex: 1; }
+  .menu-item .hint { color: var(--p-live-text-secondary); font-size: 0.92em; }
+  .menu-divider { border: none; border-top: 1px solid var(--p-live-control-border); margin: 0.5em 0; }
+  .toast {
+    position: absolute; bottom: 3.4em; left: 50%; transform: translateX(-50%);
+    background: var(--p-live-control-bg); border: 1px solid var(--p-live-accent-primary);
+    border-radius: 0.4em; padding: 0.4em 0.9em; font-size: 0.95em;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s ease;
+  }
+  .toast.visible { opacity: 1; }
+
+  footer {
+    display: flex; align-items: center; gap: 0.6em;
+    padding: 0.6em 1em; border-top: 1px solid var(--p-live-control-border);
+  }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--p-live-control-bg); border-radius: 4px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>✋ Helping Hands</h1>
+    <span class="alx-spacer"></span>
+    <button class="alx-button" id="editMenu">Edit Menu</button>
+    <button class="alx-button" id="settings">Settings ⚙</button>
+  </header>
+  <div class="toolbar">
+    <input class="alx-input" id="filter" type="text" placeholder="Type to filter… (Esc to close)" />
+  </div>
+  <main id="tree"></main>
+  <div class="toast" id="toast"></div>
+  <footer>
+    <span class="alx-muted" id="contextLabel">Context: Live</span>
+    <span class="alx-spacer"></span>
+    <button class="alx-button" id="close">Close</button>
+  </footer>
+
+<script>
+  function sendToLive(message) {
+    if (window.webkit?.messageHandlers?.live) {
+      window.webkit.messageHandlers.live.postMessage(message);
+    } else if (window.chrome?.webview) {
+      window.chrome.webview.postMessage(message);
+    }
+  }
+  function closeWithResult(result) {
+    sendToLive({ method: "close_and_send", params: [JSON.stringify(result)] });
+  }
+  function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value;
+    return div.innerHTML;
+  }
+
+  const DATA = /*__HELPING_HANDS_MENU_DATA__*/null;
+
+  const treeEl = document.getElementById("tree");
+  const filterEl = document.getElementById("filter");
+  const toastEl = document.getElementById("toast");
+  const contextEl = document.getElementById("contextLabel");
+
+  if (DATA) {
+    contextEl.textContent = "Context: " + DATA.contextLabel;
+  }
+
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add("visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove("visible"), 2200);
+  }
+
+  function matchesFilter(label, query) {
+    return query.length === 0 || label.toLowerCase().includes(query.toLowerCase());
+  }
+
+  function entryMatches(entry, query) {
+    if (query.length === 0) return true;
+    if (entry.type === "divider") return false;
+    if (entry.label && matchesFilter(entry.label, query)) return true;
+    if (entry.type === "category") return entry.items.some((child) => entryMatches(child, query));
+    return false;
+  }
+
+  function renderItem(entry) {
+    const row = document.createElement("div");
+    row.className = "menu-item";
+    const insertable = DATA.hasTrack;
+
+    if (entry.isBuiltIn) {
+      row.innerHTML =
+        '<span class="label">' + escapeHtml(entry.label) + '</span>' +
+        '<button class="alx-button alx-button--insert" ' + (insertable ? "" : "disabled") + '>+ Insert</button>';
+      row.querySelector("button").addEventListener("click", () =>
+        closeWithResult({ action: "insertDevice", deviceName: entry.label, query: entry.query, isBuiltIn: true }));
+    } else {
+      row.innerHTML =
+        '<span class="label">' + escapeHtml(entry.label) + '</span>' +
+        '<span class="hint">' + escapeHtml(entry.query) + '</span>' +
+        '<button class="alx-button alx-button--search">🔍 Search</button>';
+      row.querySelector("button").addEventListener("click", () => {
+        navigator.clipboard?.writeText(entry.query).catch(() => {});
+        showToast('Copied "' + entry.query + '" — search for it in Ableton\\'s browser.');
+      });
+    }
+    return row;
+  }
+
+  function renderChain(entry) {
+    const row = document.createElement("div");
+    row.className = "menu-chain";
+    const builtins = entry.devices.filter((d) => d.isBuiltIn).length;
+    const manual = entry.devices.length - builtins;
+    row.innerHTML =
+      '<span class="label">⛓ ' + escapeHtml(entry.label) +
+      '<span class="hint"> — ' + entry.devices.length + ' device(s)' +
+      (manual > 0 ? ", " + manual + " manual" : "") + '</span></span>' +
+      '<button class="alx-button alx-button--chain" ' + (DATA.hasTrack ? "" : "disabled") + '>⛓ Apply Chain</button>';
+    row.querySelector("button").addEventListener("click", () =>
+      closeWithResult({ action: "applyChain", chainLabel: entry.label, chain: entry.devices }));
+    return row;
+  }
+
+  function renderGroup(entry) {
+    const row = document.createElement("div");
+    row.className = "menu-group";
+    row.innerHTML =
+      '<span class="label">📦 ' + escapeHtml(entry.label) + '</span>' +
+      '<button class="alx-button alx-button--group">📦 Create Group</button>';
+    row.querySelector("button").addEventListener("click", () =>
+      closeWithResult({ action: "createGroup", group: entry }));
+    return row;
+  }
+
+  function renderEntries(container, items, query) {
+    items.forEach((entry) => {
+      if (!entryMatches(entry, query)) return;
+
+      if (entry.type === "divider") {
+        if (query.length === 0) {
+          const hr = document.createElement("hr");
+          hr.className = "menu-divider";
+          container.appendChild(hr);
+        }
+        return;
+      }
+      if (entry.type === "item") {
+        container.appendChild(renderItem(entry));
+        return;
+      }
+      if (entry.type === "chain") {
+        container.appendChild(renderChain(entry));
+        return;
+      }
+      if (entry.type === "group") {
+        container.appendChild(renderGroup(entry));
+        return;
+      }
+      if (entry.type === "category") {
+        const wrap = document.createElement("div");
+        wrap.className = "category" + (query.length === 0 ? "" : "");
+        const header = document.createElement("div");
+        header.className = "category-header";
+        header.innerHTML = '<span class="chevron">▾</span><strong>' + escapeHtml(entry.label) + "</strong>";
+        const body = document.createElement("div");
+        body.className = "category-body";
+        header.addEventListener("click", () => wrap.classList.toggle("collapsed"));
+        wrap.appendChild(header);
+        wrap.appendChild(body);
+        renderEntries(body, entry.items, query);
+        container.appendChild(wrap);
+      }
+    });
+  }
+
+  function render() {
+    treeEl.innerHTML = "";
+    const query = filterEl.value.trim();
+    if (DATA) renderEntries(treeEl, DATA.menu, query);
+  }
+
+  filterEl.addEventListener("input", render);
+  filterEl.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeWithResult({ action: "cancel" });
+  });
+
+  document.getElementById("editMenu").addEventListener("click", () => closeWithResult({ action: "editMenu" }));
+  document.getElementById("settings").addEventListener("click", () => closeWithResult({ action: "openSettings" }));
+  document.getElementById("close").addEventListener("click", () => closeWithResult({ action: "cancel" }));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.activeElement !== filterEl) closeWithResult({ action: "cancel" });
+  });
+
+  render();
+  filterEl.focus();
+</script>
+</body>
+</html>

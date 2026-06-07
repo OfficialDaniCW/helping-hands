@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "items": [
+    { "type": "category", "label": "Instruments", "items": [
+      { "type": "item", "label": "Wavetable", "query": "Wavetable", "isBuiltIn": true },
+      { "type": "item", "label": "Operator", "query": "Operator", "isBuiltIn": true },
+      { "type": "item", "label": "Analog", "query": "Analog", "isBuiltIn": true },
+      { "type": "item", "label": "Simpler", "query": "Simpler", "isBuiltIn": true },
+      { "type": "item", "label": "Sampler", "query": "Sampler", "isBuiltIn": true },
+      { "type": "item", "label": "Drum Rack", "query": "Drum Rack", "isBuiltIn": true },
+      { "type": "divider" },
+      { "type": "item", "label": "Serum (fill in your VST query)", "query": "Serum_x64 vst", "isBuiltIn": false },
+      { "type": "item", "label": "Vital (fill in your VST query)", "query": "Vital vst", "isBuiltIn": false },
+      { "type": "item", "label": "Massive X (fill in your VST query)", "query": "Massive X vst", "isBuiltIn": false }
+    ]},
+
+    { "type": "category", "label": "Effects", "items": [
+      { "type": "item", "label": "Utility", "query": "Utility", "isBuiltIn": true },
+      { "type": "item", "label": "Auto Filter", "query": "Auto Filter", "isBuiltIn": true },
+      { "type": "divider" },
+      { "type": "category", "label": "Dynamics", "items": [
+        { "type": "item", "label": "Compressor", "query": "Compressor", "isBuiltIn": true },
+        { "type": "item", "label": "Glue Compressor", "query": "Glue Compressor", "isBuiltIn": true },
+        { "type": "item", "label": "Limiter", "query": "Limiter", "isBuiltIn": true },
+        { "type": "item", "label": "Multiband Dynamics", "query": "Multiband Dynamics", "isBuiltIn": true }
+      ]},
+      { "type": "category", "label": "EQ", "items": [
+        { "type": "item", "label": "EQ Eight", "query": "EQ Eight", "isBuiltIn": true },
+        { "type": "item", "label": "EQ Three", "query": "EQ Three", "isBuiltIn": true }
+      ]},
+      { "type": "category", "label": "Reverb", "items": [
+        { "type": "item", "label": "Reverb", "query": "Reverb", "isBuiltIn": true },
+        { "type": "item", "label": "Valhalla Room (fill in your VST query)", "query": "ValhallaRoom vst", "isBuiltIn": false },
+        { "type": "item", "label": "Valhalla VintageVerb (fill in your VST query)", "query": "ValhallaVintageVerb vst", "isBuiltIn": false }
+      ]},
+      { "type": "category", "label": "Delay", "items": [
+        { "type": "item", "label": "Echo", "query": "Echo", "isBuiltIn": true },
+        { "type": "item", "label": "H-Delay (fill in your VST query)", "query": "H-Delay vst", "isBuiltIn": false }
+      ]},
+      { "type": "category", "label": "Distortion", "items": [
+        { "type": "item", "label": "Saturator", "query": "Saturator", "isBuiltIn": true },
+        { "type": "item", "label": "Redux", "query": "Redux", "isBuiltIn": true },
+        { "type": "item", "label": "Decapitator (fill in your VST query)", "query": "Decapitator vst", "isBuiltIn": false }
+      ]}
+    ]},
+
+    { "type": "divider" },
+
+    { "type": "category", "label": "MIDI Effects", "items": [
+      { "type": "item", "label": "Arpeggiator", "query": "Arpeggiator", "isBuiltIn": true },
+      { "type": "item", "label": "Chord", "query": "Chord", "isBuiltIn": true },
+      { "type": "item", "label": "Scale", "query": "Scale", "isBuiltIn": true },
+      { "type": "item", "label": "Pitch", "query": "Pitch", "isBuiltIn": true },
+      { "type": "item", "label": "Note Length", "query": "Note Length", "isBuiltIn": true },
+      { "type": "item", "label": "Velocity", "query": "Velocity", "isBuiltIn": true }
+    ]},
+
+    { "type": "category", "label": "Routing", "items": [
+      { "type": "item", "label": "Audio Effect Rack", "query": "Audio Effect Rack", "isBuiltIn": true },
+      { "type": "item", "label": "Instrument Rack", "query": "Instrument Rack", "isBuiltIn": true },
+      { "type": "item", "label": "Drum Rack", "query": "Drum Rack", "isBuiltIn": true },
+      { "type": "item", "label": "MIDI Effect Rack", "query": "MIDI Effect Rack", "isBuiltIn": true }
+    ]},
+
+    { "type": "divider" },
+
+    { "type": "category", "label": "My Chains", "items": [
+      {
+        "type": "chain",
+        "label": "Basic Mastering Chain",
+        "devices": [
+          { "deviceName": "EQ Eight", "isBuiltIn": true },
+          { "deviceName": "Glue Compressor", "isBuiltIn": true },
+          { "deviceName": "Limiter", "isBuiltIn": true }
+        ]
+      },
+      {
+        "type": "chain",
+        "label": "Drum Bus",
+        "devices": [
+          { "deviceName": "Glue Compressor", "isBuiltIn": true },
+          { "deviceName": "Saturator", "isBuiltIn": true },
+          { "deviceName": "EQ Eight", "isBuiltIn": true },
+          { "deviceName": "Limiter", "isBuiltIn": true }
+        ]
+      },
+      {
+        "type": "chain",
+        "label": "Vocal Processing",
+        "devices": [
+          { "deviceName": "EQ Eight", "isBuiltIn": true },
+          { "deviceName": "Compressor", "isBuiltIn": true },
+          { "deviceName": "Reverb", "isBuiltIn": true }
+        ]
+      }
+    ]},
+
+    { "type": "category", "label": "Groups & Racks", "items": [
+      {
+        "type": "group",
+        "label": "Drum Group",
+        "trackName": "DRUMS",
+        "colour": 16711680,
+        "returnSends": ["A", "B"]
+      },
+      {
+        "type": "group",
+        "label": "Bass Group",
+        "trackName": "BASS",
+        "colour": 255
+      },
+      {
+        "type": "group",
+        "label": "Synth Group",
+        "trackName": "SYNTHS",
+        "colour": 65280
+      },
+      {
+        "type": "group",
+        "label": "Pad Instrument Rack (fill in your preset query)",
+        "rackPresetQuery": "Pad Rack.adg",
+        "isBuiltIn": false
+      }
+    ]},
+
+    { "type": "divider" },
+
+    { "type": "item", "label": "Reverb", "query": "Reverb", "isBuiltIn": true },
+    { "type": "item", "label": "Compressor", "query": "Compressor", "isBuiltIn": true }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+    "name": "helping-hands",
+    "author": "Daniel Calvo-Westcott",
+    "entry": "dist/extension.js",
+    "version": "1.0.0",
+    "minimumApiVersion": "1.0.0"
+}

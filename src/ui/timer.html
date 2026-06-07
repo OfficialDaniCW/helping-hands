@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Helping Hands — Project Timer</title>
+<style>
+  :root {
+    --p-live-ui-bg: hsl(0, 0%, 21%);
+    --p-live-control-bg: hsl(0, 0%, 16%);
+    --p-live-input-bg: hsl(0, 0%, 12%);
+    --p-live-text-primary: hsl(0, 0%, 71%);
+    --p-live-control-border: hsl(0, 0%, 7%);
+    --p-live-text-secondary: hsl(0, 0%, 41%);
+    --p-live-accent-primary: hsl(31, 100%, 67%);
+    --p-live-control-text--enabled: hsl(0, 0%, 7%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background-color: var(--p-live-ui-bg);
+    color: var(--p-live-text-primary);
+    font-family: "AbletonSansSmall", sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding: 1em; display: flex; flex-direction: column; gap: 0.7em; height: 100vh; }
+  h2 { margin: 0; font-weight: 600; }
+  .alx-muted { color: var(--p-live-text-secondary); }
+  .alx-row { display: flex; align-items: center; gap: 0.6em; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6em; }
+  .stat-card {
+    background: var(--p-live-control-bg);
+    border: 1px solid var(--p-live-control-border);
+    border-radius: 0.4em;
+    padding: 0.6em 0.8em;
+  }
+  .stat-card .label { color: var(--p-live-text-secondary); margin-bottom: 0.2em; }
+  .stat-card .value { font-size: 1.4em; font-weight: 600; color: var(--p-live-accent-primary); }
+  .project-list { flex: 1; overflow-y: auto; border: 1px solid var(--p-live-control-border); border-radius: 0.4em; }
+  .project-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.4em 0.7em;
+    border-bottom: 1px solid var(--p-live-control-border);
+  }
+  .project-row:last-child { border-bottom: none; }
+  .project-row.current { background: rgba(255, 178, 102, 0.08); }
+  .project-row .name { display: flex; align-items: center; gap: 0.4em; }
+  .badge {
+    font-size: 0.85em;
+    color: var(--p-live-control-text--enabled);
+    background: var(--p-live-accent-primary);
+    border-radius: 1em;
+    padding: 0 0.5em;
+  }
+  .alx-button {
+    background-color: var(--p-live-control-bg);
+    color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border);
+    height: 22px; padding: 0 1.1em; border-radius: 1em;
+    cursor: pointer; font: inherit;
+  }
+  .alx-button:hover { border-color: var(--p-live-accent-primary); }
+  .alx-button--primary {
+    color: var(--p-live-control-text--enabled);
+    background-color: var(--p-live-accent-primary);
+    border-color: var(--p-live-accent-primary);
+  }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--p-live-control-bg); border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h2>✋ Project Timer</h2>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="label">Current project</div>
+      <div class="value" id="projectName" style="font-size: 1.05em;">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">This session</div>
+      <div class="value" id="sessionTime">—</div>
+    </div>
+    <div class="stat-card" style="grid-column: span 2;">
+      <div class="label">All-time total for this project</div>
+      <div class="value" id="totalTime">—</div>
+    </div>
+  </div>
+
+  <div class="alx-muted">All tracked projects</div>
+  <div class="project-list" id="projectList"></div>
+
+  <div class="alx-row" style="justify-content: flex-end;">
+    <button class="alx-button" id="reset">Reset This Project</button>
+    <button class="alx-button alx-button--primary" id="close">Close</button>
+  </div>
+
+<script>
+  function sendToLive(message) {
+    if (window.webkit?.messageHandlers?.live) {
+      window.webkit.messageHandlers.live.postMessage(message);
+    } else if (window.chrome?.webview) {
+      window.chrome.webview.postMessage(message);
+    }
+  }
+  function closeWithResult(result) {
+    sendToLive({ method: "close_and_send", params: [JSON.stringify(result)] });
+  }
+
+  const DATA = /*__HELPING_HANDS_TIMER_DATA__*/null;
+
+  function formatDuration(totalSeconds) {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    if (hours > 0) {
+      return hours + "h " + String(minutes).padStart(2, "0") + "m " + String(seconds).padStart(2, "0") + "s";
+    }
+    return minutes + "m " + String(seconds).padStart(2, "0") + "s";
+  }
+
+  if (DATA) {
+    document.getElementById("projectName").textContent = DATA.projectName;
+    document.getElementById("sessionTime").textContent = formatDuration(DATA.sessionSeconds);
+    document.getElementById("totalTime").textContent = formatDuration(DATA.totalSeconds);
+
+    const list = document.getElementById("projectList");
+    if (DATA.projects.length === 0) {
+      list.innerHTML = '<div class="project-row"><span class="alx-muted">No projects tracked yet.</span></div>';
+    } else {
+      DATA.projects.forEach((p) => {
+        const row = document.createElement("div");
+        row.className = "project-row" + (p.isCurrent ? " current" : "");
+        row.innerHTML =
+          '<span class="name">' + (p.isCurrent ? '<span class="badge">current</span> ' : "") +
+          escapeHtml(p.name) + '</span>' +
+          '<span>' + formatDuration(p.totalSeconds) + '</span>';
+        list.appendChild(row);
+      });
+    }
+  }
+
+  function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value;
+    return div.innerHTML;
+  }
+
+  document.getElementById("close").addEventListener("click", () => closeWithResult({ action: "close" }));
+  document.getElementById("reset").addEventListener("click", () => closeWithResult({ action: "reset" }));
+</script>
+</body>
+</html>
