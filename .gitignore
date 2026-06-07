@@ -7,3 +7,8 @@ dist/
 *.tsbuildinfo
 
 .env
+
+# Local storage/temp directories used by `npm start` (see package.json) —
+# the Extension Host needs real paths in dev mode since the CLI doesn't
+# supply context.environment.storageDirectory/tempDirectory by default.
+.local/

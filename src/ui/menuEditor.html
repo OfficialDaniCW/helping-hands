@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Helping Hands — Menu Editor</title>
+<style>
+  :root {
+    --p-live-ui-bg: hsl(0, 0%, 21%);
+    --p-live-control-bg: hsl(0, 0%, 16%);
+    --p-live-input-bg: hsl(0, 0%, 12%);
+    --p-live-text-primary: hsl(0, 0%, 71%);
+    --p-live-control-border: hsl(0, 0%, 7%);
+    --p-live-text-secondary: hsl(0, 0%, 41%);
+    --p-live-accent-primary: hsl(31, 100%, 67%);
+    --p-live-control-text--enabled: hsl(0, 0%, 7%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100vh; overflow: hidden;
+    background-color: var(--p-live-ui-bg);
+    color: var(--p-live-text-primary);
+    font-family: "AbletonSansSmall", sans-serif;
+    font-size: 11.5px; font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; gap: 0.6em;
+    padding: 0.6em 1em; border-bottom: 1px solid var(--p-live-control-border);
+  }
+  header h1 { font-size: 1.1em; margin: 0; font-weight: 600; }
+  .alx-spacer { flex: 1; }
+  .alx-muted { color: var(--p-live-text-secondary); }
+  .layout { flex: 1; display: flex; min-height: 0; }
+  .panel { display: flex; flex-direction: column; min-height: 0; }
+  .panel-left { width: 46%; border-right: 1px solid var(--p-live-control-border); }
+  .panel-right { flex: 1; padding: 0.8em; overflow-y: auto; }
+  .panel-toolbar { display: flex; flex-wrap: wrap; gap: 0.35em; padding: 0.6em; border-bottom: 1px solid var(--p-live-control-border); }
+  .panel-tree { flex: 1; overflow-y: auto; padding: 0.5em; }
+  .panel-footer { display: flex; gap: 0.4em; padding: 0.6em; border-top: 1px solid var(--p-live-control-border); }
+
+  .alx-button {
+    background-color: var(--p-live-control-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border);
+    height: 22px; padding: 0 0.9em; border-radius: 1em; cursor: pointer; font: inherit; white-space: nowrap;
+  }
+  .alx-button:hover { border-color: var(--p-live-accent-primary); }
+  .alx-button--primary {
+    color: var(--p-live-control-text--enabled); background-color: var(--p-live-accent-primary);
+    border-color: var(--p-live-accent-primary);
+  }
+  .alx-button:disabled { opacity: 0.4; cursor: default; }
+  .alx-input, .alx-select, textarea.alx-input {
+    background: var(--p-live-input-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border); height: 24px; padding: 0 0.5em;
+    border-radius: 0.25em; font: inherit; width: 100%;
+  }
+  textarea.alx-input { height: auto; padding: 0.4em 0.5em; resize: vertical; font-family: monospace; }
+  label.field { display: flex; flex-direction: column; gap: 0.25em; margin-bottom: 0.7em; }
+  .alx-row { display: flex; align-items: center; gap: 0.5em; }
+
+  .tree-node { user-select: none; }
+  .tree-row {
+    display: flex; align-items: center; gap: 0.35em;
+    padding: 0.28em 0.4em; border-radius: 0.25em; cursor: pointer;
+  }
+  .tree-row:hover { background: var(--p-live-control-bg); }
+  .tree-row.selected { background: var(--p-live-accent-primary); color: var(--p-live-control-text--enabled); }
+  .tree-row .chevron { width: 1em; color: var(--p-live-text-secondary); transition: transform 0.1s ease; }
+  .tree-row.selected .chevron { color: inherit; }
+  .tree-node.collapsed > .tree-children { display: none; }
+  .tree-node.collapsed > .tree-row .chevron { transform: rotate(-90deg); }
+  .tree-children { padding-left: 1.3em; }
+  .tree-row .type-tag {
+    font-size: 0.85em; color: var(--p-live-text-secondary);
+    border: 1px solid var(--p-live-control-border); border-radius: 0.6em; padding: 0 0.4em;
+  }
+  .tree-row.selected .type-tag { color: inherit; border-color: rgba(0,0,0,0.3); }
+  hr.tree-divider { border: none; border-top: 1px dashed var(--p-live-control-border); margin: 0.3em 0.6em; }
+
+  .device-row {
+    display: flex; align-items: center; gap: 0.4em; padding: 0.25em 0;
+    border-bottom: 1px solid var(--p-live-control-border);
+  }
+  .device-row .alx-input { flex: 1; }
+  .toast {
+    position: fixed; bottom: 1.4em; left: 50%; transform: translateX(-50%);
+    background: var(--p-live-control-bg); border: 1px solid var(--p-live-accent-primary);
+    border-radius: 0.4em; padding: 0.4em 0.9em; font-size: 0.95em;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 20;
+  }
+  .toast.visible { opacity: 1; }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: none; align-items: center; justify-content: center; z-index: 10;
+  }
+  .overlay.visible { display: flex; }
+  .overlay-card {
+    background: var(--p-live-ui-bg); border: 1px solid var(--p-live-control-border);
+    border-radius: 0.5em; padding: 1em; width: 80%; max-width: 640px;
+    display: flex; flex-direction: column; gap: 0.6em;
+  }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--p-live-control-bg); border-radius: 4px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>✋ Helping Hands — Menu Editor</h1>
+    <span class="alx-spacer"></span>
+    <button class="alx-button" id="resetDefaults">Reset to Defaults</button>
+    <button class="alx-button" id="exportBtn">Export</button>
+    <button class="alx-button" id="importBtn">Import</button>
+    <button class="alx-button alx-button--primary" id="save">Save</button>
+    <button class="alx-button" id="close">Close</button>
+  </header>
+
+  <div class="layout">
+    <div class="panel panel-left">
+      <div class="panel-toolbar">
+        <button class="alx-button" id="addItem">+ Item</button>
+        <button class="alx-button" id="addChain">+ Chain</button>
+        <button class="alx-button" id="addGroup">+ Group</button>
+        <button class="alx-button" id="addDivider">+ Divider</button>
+        <button class="alx-button" id="addCategory">+ Category</button>
+      </div>
+      <div class="panel-tree" id="tree"></div>
+      <div class="panel-footer">
+        <button class="alx-button" id="deleteItem">Delete Selected</button>
+        <span class="alx-spacer"></span>
+        <button class="alx-button" id="moveUp">▲ Move Up</button>
+        <button class="alx-button" id="moveDown">▼ Move Down</button>
+      </div>
+    </div>
+    <div class="panel panel-right" id="editPanel">
+      <p class="alx-muted">Select an item on the left to edit it.</p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <h3 id="overlayTitle" style="margin:0;">Export</h3>
+      <textarea class="alx-input" id="overlayText" rows="14"></textarea>
+      <div class="alx-row" style="justify-content:flex-end;">
+        <button class="alx-button" id="overlayCancel">Close</button>
+        <button class="alx-button alx-button--primary" id="overlayConfirm">Apply</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  function sendToLive(message) {
+    if (window.webkit?.messageHandlers?.live) {
+      window.webkit.messageHandlers.live.postMessage(message);
+    } else if (window.chrome?.webview) {
+      window.chrome.webview.postMessage(message);
+    }
+  }
+  function closeWithResult(result) {
+    sendToLive({ method: "close_and_send", params: [JSON.stringify(result)] });
+  }
+  function escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = value == null ? "" : String(value);
+    return div.innerHTML;
+  }
+
+  const SEED = /*__HELPING_HANDS_EDITOR_DATA__*/null;
+  let config = SEED ? JSON.parse(JSON.stringify(SEED.config)) : { version: 1, items: [] };
+  let selectedPath = null; // array of indices from config.items down to the entry
+
+  const treeEl = document.getElementById("tree");
+  const editPanel = document.getElementById("editPanel");
+  const toastEl = document.getElementById("toast");
+
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add("visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove("visible"), 1600);
+  }
+
+  // -- Path helpers ----------------------------------------------------------
+
+  function getContainerAndEntry(path) {
+    let items = config.items;
+    let entry = null;
+    for (let depth = 0; depth < path.length; depth++) {
+      entry = items[path[depth]];
+      if (depth < path.length - 1) items = entry.items;
+    }
+    return { items, index: path[path.length - 1], entry };
+  }
+
+  function pathsEqual(a, b) {
+    return !!a && !!b && a.length === b.length && a.every((v, i) => v === b[i]);
+  }
+
+  // -- Tree rendering ---------------------------------------------------------
+
+  function typeTag(entry) {
+    switch (entry.type) {
+      case "item": return entry.isBuiltIn ? "plugin · built-in" : "plugin · vst";
+      case "chain": return "chain";
+      case "group": return "group";
+      case "category": return "category";
+      case "divider": return "divider";
+      default: return entry.type;
+    }
+  }
+
+  function renderTreeNodes(container, items, parentPath) {
+    items.forEach((entry, index) => {
+      const path = [...parentPath, index];
+
+      if (entry.type === "divider") {
+        const hr = document.createElement("hr");
+        hr.className = "tree-divider";
+        hr.dataset.path = path.join(",");
+        hr.addEventListener("click", (e) => { e.stopPropagation(); selectPath(path); });
+        if (pathsEqual(selectedPath, path)) hr.style.borderColor = "var(--p-live-accent-primary)";
+        container.appendChild(hr);
+        return;
+      }
+
+      const node = document.createElement("div");
+      node.className = "tree-node";
+      node.dataset.path = path.join(",");
+
+      const row = document.createElement("div");
+      row.className = "tree-row" + (pathsEqual(selectedPath, path) ? " selected" : "");
+      const hasChildren = entry.type === "category";
+      row.innerHTML =
+        '<span class="chevron">' + (hasChildren ? "▾" : "") + "</span>" +
+        "<span style=\"flex:1\">" + escapeHtml(entry.label || "(untitled)") + "</span>" +
+        '<span class="type-tag">' + typeTag(entry) + "</span>";
+      row.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (hasChildren && e.target.classList.contains("chevron")) {
+          node.classList.toggle("collapsed");
+          return;
+        }
+        selectPath(path);
+      });
+      row.querySelector(".chevron").addEventListener("click", (e) => {
+        if (hasChildren) { e.stopPropagation(); node.classList.toggle("collapsed"); }
+      });
+      node.appendChild(row);
+
+      if (hasChildren) {
+        const children = document.createElement("div");
+        children.className = "tree-children";
+        renderTreeNodes(children, entry.items, path);
+        node.appendChild(children);
+      }
+      container.appendChild(node);
+    });
+  }
+
+  function renderTree() {
+    treeEl.innerHTML = "";
+    renderTreeNodes(treeEl, config.items, []);
+  }
+
+  function selectPath(path) {
+    selectedPath = path;
+    renderTree();
+    renderEditPanel();
+  }
+
+  // -- Mutation helpers --------------------------------------------------------
+
+  function targetArrayForInsert() {
+    if (!selectedPath) return { items: config.items, insertAt: config.items.length };
+    const { items, index, entry } = getContainerAndEntry(selectedPath);
+    if (entry.type === "category") {
+      return { items: entry.items, insertAt: entry.items.length };
+    }
+    return { items, insertAt: index + 1 };
+  }
+
+  function insertEntry(entry) {
+    const { items, insertAt } = targetArrayForInsert();
+    items.splice(insertAt, 0, entry);
+    // Re-deriving the new entry's path requires knowing its container's path —
+    // simplest: re-render and select nothing (user can click it).
+    selectedPath = null;
+    renderTree();
+    renderEditPanel();
+  }
+
+  document.getElementById("addItem").addEventListener("click", () =>
+    insertEntry({ type: "item", label: "New Item", query: "", isBuiltIn: true }));
+  document.getElementById("addChain").addEventListener("click", () =>
+    insertEntry({ type: "chain", label: "New Chain", devices: [] }));
+  document.getElementById("addGroup").addEventListener("click", () =>
+    insertEntry({ type: "group", label: "New Group", trackName: "New Group" }));
+  document.getElementById("addDivider").addEventListener("click", () =>
+    insertEntry({ type: "divider" }));
+  document.getElementById("addCategory").addEventListener("click", () =>
+    insertEntry({ type: "category", label: "New Category", items: [] }));
+
+  document.getElementById("deleteItem").addEventListener("click", () => {
+    if (!selectedPath) return;
+    const { items, index } = getContainerAndEntry(selectedPath);
+    items.splice(index, 1);
+    selectedPath = null;
+    renderTree();
+    renderEditPanel();
+  });
+
+  function move(delta) {
+    if (!selectedPath) return;
+    const { items, index } = getContainerAndEntry(selectedPath);
+    const target = index + delta;
+    if (target < 0 || target >= items.length) return;
+    const [moved] = items.splice(index, 1);
+    items.splice(target, 0, moved);
+    selectedPath = [...selectedPath.slice(0, -1), target];
+    renderTree();
+    renderEditPanel();
+  }
+  document.getElementById("moveUp").addEventListener("click", () => move(-1));
+  document.getElementById("moveDown").addEventListener("click", () => move(1));
+
+  // -- Edit panel ---------------------------------------------------------------
+
+  function renderEditPanel() {
+    if (!selectedPath) {
+      editPanel.innerHTML = '<p class="alx-muted">Select an item on the left to edit it, or use the toolbar to add a new one.</p>';
+      return;
+    }
+    const { entry } = getContainerAndEntry(selectedPath);
+
+    if (entry.type === "divider") {
+      editPanel.innerHTML = '<h3 style="margin-top:0;">Divider</h3><p class="alx-muted">Dividers have no fields — they just draw a line in the menu.</p>';
+      return;
+    }
+
+    if (entry.type === "category") {
+      editPanel.innerHTML =
+        '<h3 style="margin-top:0;">Category</h3>' +
+        '<label class="field"><span class="alx-muted">Label</span><input class="alx-input" id="f-label" value="' + escapeHtml(entry.label) + '" /></label>' +
+        '<p class="alx-muted">Use the tree to add items inside this category — they\\'ll be added as its children.</p>';
+      bindLabelField(entry);
+      return;
+    }
+
+    if (entry.type === "item") {
+      editPanel.innerHTML =
+        '<h3 style="margin-top:0;">Plugin / Device</h3>' +
+        '<label class="field"><span class="alx-muted">Label</span><input class="alx-input" id="f-label" value="' + escapeHtml(entry.label) + '" /></label>' +
+        '<label class="field"><span class="alx-muted">Browser query</span><input class="alx-input" id="f-query" value="' + escapeHtml(entry.query) + '" /></label>' +
+        '<label class="field"><span class="alx-row"><input type="checkbox" id="f-builtin" ' + (entry.isBuiltIn ? "checked" : "") + ' /> Built-in Live device (auto-insertable)</span></label>';
+      bindLabelField(entry);
+      bindTextField(entry, "query", "f-query");
+      document.getElementById("f-builtin").addEventListener("change", (e) => { entry.isBuiltIn = e.target.checked; renderTree(); });
+      return;
+    }
+
+    if (entry.type === "chain") {
+      const rows = (entry.devices || [])
+        .map((d, i) =>
+          '<div class="device-row" data-index="' + i + '">' +
+          '<span class="alx-muted">' + (i + 1) + '.</span>' +
+          '<input class="alx-input dev-name" data-index="' + i + '" value="' + escapeHtml(d.deviceName) + '" />' +
+          '<label class="alx-row"><input type="checkbox" class="dev-builtin" data-index="' + i + '" ' + (d.isBuiltIn ? "checked" : "") + ' /> built-in</label>' +
+          '<input class="alx-input dev-query" data-index="' + i + '" placeholder="browser query (for VSTs)" value="' + escapeHtml(d.query || "") + '" />' +
+          '<button class="alx-button dev-up" data-index="' + i + '">▲</button>' +
+          '<button class="alx-button dev-down" data-index="' + i + '">▼</button>' +
+          '<button class="alx-button dev-remove" data-index="' + i + '">✕</button>' +
+          '</div>')
+        .join("");
+
+      editPanel.innerHTML =
+        '<h3 style="margin-top:0;">Device Chain</h3>' +
+        '<label class="field"><span class="alx-muted">Label</span><input class="alx-input" id="f-label" value="' + escapeHtml(entry.label) + '" /></label>' +
+        '<div class="alx-muted" style="margin-bottom:0.4em;">Chain Devices (inserted in this order)</div>' +
+        '<div id="deviceList">' + rows + "</div>" +
+        '<button class="alx-button" id="addDevice" style="margin-top:0.5em;">+ Add Device to Chain</button>';
+
+      bindLabelField(entry);
+      if (!entry.devices) entry.devices = [];
+
+      document.getElementById("addDevice").addEventListener("click", () => {
+        entry.devices.push({ deviceName: "New Device", isBuiltIn: true, query: "" });
+        renderEditPanel();
+        renderTree();
+      });
+
+      editPanel.querySelectorAll(".dev-name").forEach((el) =>
+        el.addEventListener("input", (e) => { entry.devices[+e.target.dataset.index].deviceName = e.target.value; }));
+      editPanel.querySelectorAll(".dev-query").forEach((el) =>
+        el.addEventListener("input", (e) => { entry.devices[+e.target.dataset.index].query = e.target.value; }));
+      editPanel.querySelectorAll(".dev-builtin").forEach((el) =>
+        el.addEventListener("change", (e) => { entry.devices[+e.target.dataset.index].isBuiltIn = e.target.checked; }));
+      editPanel.querySelectorAll(".dev-remove").forEach((el) =>
+        el.addEventListener("click", (e) => { entry.devices.splice(+e.target.dataset.index, 1); renderEditPanel(); }));
+      editPanel.querySelectorAll(".dev-up").forEach((el) =>
+        el.addEventListener("click", (e) => {
+          const i = +e.target.dataset.index;
+          if (i > 0) { const [d] = entry.devices.splice(i, 1); entry.devices.splice(i - 1, 0, d); renderEditPanel(); }
+        }));
+      editPanel.querySelectorAll(".dev-down").forEach((el) =>
+        el.addEventListener("click", (e) => {
+          const i = +e.target.dataset.index;
+          if (i < entry.devices.length - 1) { const [d] = entry.devices.splice(i, 1); entry.devices.splice(i + 1, 0, d); renderEditPanel(); }
+        }));
+      return;
+    }
+
+    if (entry.type === "group") {
+      editPanel.innerHTML =
+        '<h3 style="margin-top:0;">Track Group / Rack</h3>' +
+        '<label class="field"><span class="alx-muted">Label</span><input class="alx-input" id="f-label" value="' + escapeHtml(entry.label) + '" /></label>' +
+        '<label class="field"><span class="alx-muted">New track name</span><input class="alx-input" id="f-trackname" value="' + escapeHtml(entry.trackName || "") + '" /></label>' +
+        '<label class="field"><span class="alx-muted">Colour (decimal RGB integer, optional)</span><input class="alx-input" id="f-colour" value="' + (entry.colour ?? "") + '" /></label>' +
+        '<label class="field"><span class="alx-muted">Return sends (comma-separated, optional)</span><input class="alx-input" id="f-sends" value="' + escapeHtml((entry.returnSends || []).join(", ")) + '" /></label>' +
+        '<label class="field"><span class="alx-muted">Rack preset browser query (optional)</span><input class="alx-input" id="f-rackquery" value="' + escapeHtml(entry.rackPresetQuery || "") + '" /></label>';
+
+      bindLabelField(entry);
+      bindTextField(entry, "trackName", "f-trackname");
+      bindTextField(entry, "rackPresetQuery", "f-rackquery");
+      document.getElementById("f-colour").addEventListener("input", (e) => {
+        const n = parseInt(e.target.value, 10);
+        entry.colour = Number.isFinite(n) ? n : undefined;
+      });
+      document.getElementById("f-sends").addEventListener("input", (e) => {
+        const parts = e.target.value.split(",").map((s) => s.trim()).filter(Boolean);
+        entry.returnSends = parts.length ? parts : undefined;
+      });
+      return;
+    }
+  }
+
+  function bindLabelField(entry) {
+    const el = document.getElementById("f-label");
+    el.addEventListener("input", (e) => { entry.label = e.target.value; renderTree(); });
+  }
+  function bindTextField(entry, key, id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", (e) => { entry[key] = e.target.value; });
+  }
+
+  // -- Save / Reset / Import / Export -------------------------------------------
+
+  document.getElementById("save").addEventListener("click", () => {
+    showToast("Saved.");
+    setTimeout(() => closeWithResult({ action: "saveMenu", config }), 650);
+  });
+
+  document.getElementById("close").addEventListener("click", () => closeWithResult({ action: "cancel" }));
+
+  document.getElementById("resetDefaults").addEventListener("click", () => {
+    if (SEED && SEED.defaults) {
+      config = JSON.parse(JSON.stringify(SEED.defaults));
+      selectedPath = null;
+      renderTree();
+      renderEditPanel();
+      showToast("Restored defaults — click Save to keep them.");
+    }
+  });
+
+  const overlay = document.getElementById("overlay");
+  const overlayTitle = document.getElementById("overlayTitle");
+  const overlayText = document.getElementById("overlayText");
+  const overlayConfirm = document.getElementById("overlayConfirm");
+  let overlayMode = "export";
+
+  function openOverlay(mode) {
+    overlayMode = mode;
+    if (mode === "export") {
+      overlayTitle.textContent = "Export menuconfig.json";
+      overlayText.value = JSON.stringify(config, null, 2);
+      overlayText.readOnly = true;
+      overlayConfirm.textContent = "Copy to Clipboard";
+    } else {
+      overlayTitle.textContent = "Import menuconfig.json";
+      overlayText.value = "";
+      overlayText.readOnly = false;
+      overlayConfirm.textContent = "Apply";
+    }
+    overlay.classList.add("visible");
+  }
+
+  document.getElementById("exportBtn").addEventListener("click", () => openOverlay("export"));
+  document.getElementById("importBtn").addEventListener("click", () => openOverlay("import"));
+  document.getElementById("overlayCancel").addEventListener("click", () => overlay.classList.remove("visible"));
+  overlayConfirm.addEventListener("click", () => {
+    if (overlayMode === "export") {
+      navigator.clipboard?.writeText(overlayText.value).catch(() => {});
+      showToast("Copied to clipboard.");
+      overlay.classList.remove("visible");
+    } else {
+      try {
+        const parsed = JSON.parse(overlayText.value);
+        if (!parsed || !Array.isArray(parsed.items)) throw new Error("missing items array");
+        config = parsed;
+        selectedPath = null;
+        renderTree();
+        renderEditPanel();
+        overlay.classList.remove("visible");
+        showToast("Imported — click Save to keep it.");
+      } catch (err) {
+        showToast("Invalid JSON — couldn't import.");
+      }
+    }
+  });
+
+  renderTree();
+  renderEditPanel();
+</script>
+</body>
+</html>

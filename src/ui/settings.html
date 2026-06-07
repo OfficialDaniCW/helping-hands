@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Helping Hands — Settings</title>
+<style>
+  :root {
+    --p-live-ui-bg: hsl(0, 0%, 21%);
+    --p-live-control-bg: hsl(0, 0%, 16%);
+    --p-live-input-bg: hsl(0, 0%, 12%);
+    --p-live-text-primary: hsl(0, 0%, 71%);
+    --p-live-control-border: hsl(0, 0%, 7%);
+    --p-live-text-secondary: hsl(0, 0%, 41%);
+    --p-live-accent-primary: hsl(31, 100%, 67%);
+    --p-live-control-text--enabled: hsl(0, 0%, 7%);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background-color: var(--p-live-ui-bg);
+    color: var(--p-live-text-primary);
+    font-family: "AbletonSansSmall", sans-serif;
+    font-size: 11.5px; font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { display: flex; flex-direction: column; height: 100vh; padding: 1.1em; gap: 0.9em; }
+  h1 { font-size: 1.15em; margin: 0; font-weight: 600; }
+  h3 { margin: 0 0 0.3em; font-weight: 600; }
+  .alx-muted { color: var(--p-live-text-secondary); }
+  .alx-spacer { flex: 1; }
+  .alx-row { display: flex; align-items: center; gap: 0.6em; }
+  .alx-divider { border: none; border-top: 1px solid var(--p-live-control-border); margin: 0.2em 0; }
+  .section { display: flex; flex-direction: column; gap: 0.4em; }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 1em;
+    padding: 0.5em 0.7em; background: var(--p-live-control-bg);
+    border: 1px solid var(--p-live-control-border); border-radius: 0.4em;
+  }
+  .toggle-row .copy { display: flex; flex-direction: column; gap: 0.15em; }
+  .switch { position: relative; width: 34px; height: 19px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute; inset: 0; background: var(--p-live-input-bg);
+    border: 1px solid var(--p-live-control-border); border-radius: 999px; cursor: pointer; transition: background 0.12s ease;
+  }
+  .switch .track::before {
+    content: ""; position: absolute; width: 13px; height: 13px; left: 2px; top: 2px;
+    background: var(--p-live-text-secondary); border-radius: 50%; transition: transform 0.12s ease, background 0.12s ease;
+  }
+  .switch input:checked + .track { background: var(--p-live-accent-primary); border-color: var(--p-live-accent-primary); }
+  .switch input:checked + .track::before { transform: translateX(15px); background: var(--p-live-control-text--enabled); }
+  .alx-select {
+    background: var(--p-live-input-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border); height: 24px; padding: 0 0.5em;
+    border-radius: 0.25em; font: inherit;
+  }
+  .alx-button {
+    background-color: var(--p-live-control-bg); color: var(--p-live-text-primary);
+    border: 1px solid var(--p-live-control-border);
+    height: 24px; padding: 0 1.1em; border-radius: 1em; cursor: pointer; font: inherit;
+  }
+  .alx-button:hover { border-color: var(--p-live-accent-primary); }
+  .alx-button--primary {
+    color: var(--p-live-control-text--enabled); background-color: var(--p-live-accent-primary);
+    border-color: var(--p-live-accent-primary);
+  }
+  footer { display: flex; gap: 0.5em; }
+</style>
+</head>
+<body>
+  <h1>✋ Helping Hands — Settings</h1>
+
+  <div class="section">
+    <h3>Right-Click Menu</h3>
+    <div class="toggle-row">
+      <div class="copy">
+        <span>Show Helping Hands actions in right-click menus</span>
+        <span class="alx-muted">Turn this off to keep Live's menus tidy — "Helping Hands ✋" stays available as your hub either way.</span>
+      </div>
+      <label class="switch"><input type="checkbox" id="contextMenuEnabled" /><span class="track"></span></label>
+    </div>
+    <div class="alx-row">
+      <span class="alx-muted">Manage devices, chains and groups in the menu:</span>
+      <span class="alx-spacer"></span>
+      <button class="alx-button" id="openEditor">Open Menu Editor…</button>
+    </div>
+  </div>
+
+  <hr class="alx-divider" />
+
+  <div class="section">
+    <h3>Project Timer</h3>
+    <div class="toggle-row">
+      <div class="copy">
+        <span>Track time spent per project</span>
+        <span class="alx-muted">Helping Hands keeps a running total while a project is open — see it via "Helping Hands: Show Project Timer".</span>
+      </div>
+      <label class="switch"><input type="checkbox" id="projectTimerEnabled" /><span class="track"></span></label>
+    </div>
+  </div>
+
+  <hr class="alx-divider" />
+
+  <div class="section">
+    <h3>Scale Helper Default</h3>
+    <p class="alx-muted" style="margin:0;">Used as the starting point whenever you open "Helping Hands: Set Scale" on a clip.</p>
+    <div class="alx-row">
+      <label class="alx-muted">Root note</label>
+      <select id="rootNote" class="alx-select"></select>
+      <label class="alx-muted">Scale</label>
+      <select id="scaleType" class="alx-select"></select>
+    </div>
+  </div>
+
+  <span class="alx-spacer"></span>
+
+  <footer>
+    <span class="alx-spacer"></span>
+    <button class="alx-button" id="cancel">Cancel</button>
+    <button class="alx-button alx-button--primary" id="save">Save</button>
+  </footer>
+
+<script>
+  function sendToLive(message) {
+    if (window.webkit?.messageHandlers?.live) {
+      window.webkit.messageHandlers.live.postMessage(message);
+    } else if (window.chrome?.webview) {
+      window.chrome.webview.postMessage(message);
+    }
+  }
+  function closeWithResult(result) {
+    sendToLive({ method: "close_and_send", params: [JSON.stringify(result)] });
+  }
+
+  const DATA = /*__HELPING_HANDS_SETTINGS_DATA__*/null;
+
+  const contextMenuEl = document.getElementById("contextMenuEnabled");
+  const projectTimerEl = document.getElementById("projectTimerEnabled");
+  const rootSelect = document.getElementById("rootNote");
+  const scaleSelect = document.getElementById("scaleType");
+
+  if (DATA) {
+    contextMenuEl.checked = !!DATA.settings.contextMenuEnabled;
+    projectTimerEl.checked = !!DATA.settings.projectTimerEnabled;
+
+    DATA.noteNames.forEach((name, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = name;
+      if (i === DATA.settings.defaultScale.rootNote) opt.selected = true;
+      rootSelect.appendChild(opt);
+    });
+
+    DATA.scales.forEach((s) => {
+      const opt = document.createElement("option");
+      opt.value = s;
+      opt.textContent = s;
+      if (s === DATA.settings.defaultScale.scaleType) opt.selected = true;
+      scaleSelect.appendChild(opt);
+    });
+  }
+
+  function buildSettings() {
+    return {
+      contextMenuEnabled: contextMenuEl.checked,
+      projectTimerEnabled: projectTimerEl.checked,
+      defaultScale: {
+        rootNote: parseInt(rootSelect.value, 10),
+        scaleType: scaleSelect.value,
+      },
+    };
+  }
+
+  document.getElementById("save").addEventListener("click", () =>
+    closeWithResult({ action: "save", settings: buildSettings() }));
+  document.getElementById("cancel").addEventListener("click", () => closeWithResult({ action: "cancel" }));
+  document.getElementById("openEditor").addEventListener("click", () =>
+    closeWithResult({ action: "openMenuEditor", settings: buildSettings() }));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeWithResult({ action: "cancel" });
+  });
+</script>
+</body>
+</html>

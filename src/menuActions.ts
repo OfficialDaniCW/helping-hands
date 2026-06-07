@@ -1,7 +1,6 @@
 import {
   AudioClip,
   AudioTrack,
-  Clip,
   ClipSlot,
   DataModelObject,
   Device,
@@ -33,6 +32,7 @@ import { registerNewVersionSave } from "./versionSave.js";
 import { registerScaleHelper } from "./scaleHelper.js";
 import { openMenuEditorDialog } from "./menuEditor.js";
 import { openSettingsDialog } from "./settingsPanel.js";
+import { loadSettings } from "./config.js";
 import type { ProjectTimer } from "./projectTimer.js";
 
 type Ctx = ExtensionContext<"1.0.0">;
@@ -187,10 +187,6 @@ export async function registerMenuActions(deps: MenuActionsDeps): Promise<() => 
     registerNewVersionSave(context);
     registerScaleHelper(context);
 
-    context.commands.registerCommand("helping-hands.showProjectTimer", async () => {
-      /* re-registered defensively below; actual handler lives on ProjectTimer */
-    });
-
     context.commands.registerCommand("helping-hands.addCuePoint", async (...args: unknown[]) => {
       const selection = args[0] as ArrangementSelection;
       await context.application.song.createCuePoint(selection.time_selection_start);
@@ -260,8 +256,11 @@ export async function registerMenuActions(deps: MenuActionsDeps): Promise<() => 
 
   // Always make the command handlers available — `helping-hands.openMenu`
   // routes to several of them (insertDevice/applyChain) regardless of
-  // whether their direct menu entries are shown.
+  // whether their direct menu entries are shown. Then apply the persisted
+  // preference for whether the feature menu *entries* themselves show up.
   ensureCommandsRegistered();
+  const settings = await loadSettings(storageDirectory);
+  await setFeatureActionsEnabled(settings.contextMenuEnabled);
 
   return async () => {
     await Promise.all(coreUnregisters.map((unregister) => unregister()));
